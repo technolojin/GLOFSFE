@@ -30,27 +30,25 @@ dir_img='../../data/lowAR_Tohoku/Case123/';
 dir_mask=[dir_img,'mask/mask.tif'];
 % image format
 max_image=2^8; % 8 bit image
-
+% load images
 In=LoadImages(dir_img,'tif')/max_image;
-[ni,nj,nk]=size(In);
-PairList=[1:nk-1;2:nk]';
-
 % mask image (Region of Interest)
 mask=imread(dir_mask)/max_image;
 roi=mask>0.5;
-
+% image size
+[ni,nj,nk]=size(In);
+PairList=[1:nk-1;2:nk]';
 nk=size(PairList,1);
 
-%% LLS
-% set integration area
-Scell=ones(1);
-
-%% scheme 3
+%% LLS scheme 3
 % tau vector follows face ni*nj
 % flux follows face ni*nj
 % residual unit around node (ni-1)*(nj-1)
 nM=ni*nj;
 nP=(ni-1)*(nj-1);
+
+% set integration area
+Scell=ones(1);
 
 % time average
 Mave=[spdiags(ones(nM,1),0,nM,nM),spdiags(ones(nM,1),0,nM,nM)]/2;

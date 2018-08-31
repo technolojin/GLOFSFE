@@ -10,9 +10,6 @@ method for global luminescent oil film skin friction field analysis", Review of
 Scientific Instruments 89, 065106 (2018).
 https://doi.org/10.1063/1.5001388
 
-Please download sample GLOF image sets from our homepage.
-http://www.aero.mech.tohoku.ac.jp/glof/GLOF_example.zip
-
 
 Author:
 Taekjin LEE

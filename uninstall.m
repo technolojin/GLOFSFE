@@ -1,3 +1,2 @@
-currentFolder = pwd;
-rmpath([currentFolder,'\GLOFSFE\']);
+rmpath([pwd,'\GLOFSFE\']);
 savepath;

@@ -1,3 +1,2 @@
-currentFolder = pwd;
-addpath([currentFolder,'\GLOFSFE\']);
+addpath([pwd,'\GLOFSFE\']);
 savepath;
