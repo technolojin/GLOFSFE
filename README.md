@@ -14,11 +14,12 @@ Scientific Instruments 89, 065106 (2018).
 <https://doi.org/10.1063/1.5001388>
 
 ## Requirement
-* MATLAB 2013a or later
-* Image Processing Toolbox
-for GPGPU option
-* MATLAB R2016a or later
-* Parallel Computing Toolbox
+* Minimum
+  * MATLAB 2013a or later
+  * Image Processing Toolbox
+* Optional (GPGPU usage)
+  * MATLAB R2016a or later
+  * Parallel Computing Toolbox
 
 ## Install
 1. Unpack the files, if necessary
