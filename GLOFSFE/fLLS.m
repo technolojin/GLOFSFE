@@ -132,7 +132,7 @@ for k=1:nk
         h=gpuArray(h);
     end
     hf=A2*h;
-    hh=spdiags(hf.*hf/2,0,nF,nF);
+    hh=sparse(1:nF,1:nF,hf.*hf/2,nF,nF);
     
     Ak=A1*hh*A3;    
     Bk=B1*h;
