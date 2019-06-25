@@ -13,7 +13,7 @@ classdef cGLOFRun < cGLOFImageSet
         RunConditions    % Run conditions(flow conditions), struct
         
         % data
-        PairLists     % image pair index (np x 2)
+        PairList     % image pair index (np x 2)
         np            % number of image pairs
         
     end
@@ -25,19 +25,19 @@ classdef cGLOFRun < cGLOFImageSet
             obj=setPairList(obj);
         end
         
-        function obj=setPairList(obj,PairLists)
+        function obj=setPairList(obj,PairList)
             narginchk(1,2);        % pair list
             if nargin==1
                 nk=obj.Dim(3);
-                obj.PairLists=[1:nk-1;2:nk]'; % time sequential images
+                obj.PairList=[1:nk-1;2:nk]'; % time sequential images
             else
-                if size(PairLists,1)>=2&&size(PairLists,2)==2
-                    obj.PairLists=PairLists;
+                if size(PairList,1)>=2&&size(PairList,2)==2
+                    obj.PairList=PairList;
                 else
-                    error('not proper PairLists size');
+                    error('not proper PairList size');
                 end
             end
-            obj.np=size(obj.PairLists,1);
+            obj.np=size(obj.PairList,1);
         end
         
     end

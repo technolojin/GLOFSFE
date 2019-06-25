@@ -1,24 +1,22 @@
-function setCalPara(obj)
-% get beta
-[sp,sl]=obj.oCase.getScale(); %sl[m]
-lp=sqrt((sp(1)-sp(2)).^2+(sp(3)-sp(4)).^2);
-beta=lp/sl;% [pixel/m]
+function setCalPara(obj,gamma,visc_oil,Texp_ratio)
 
-% get alpha
-[dp,v_drop]=obj.oCase.getOilDrops();
-n_drops=size(dp,1);
-I_alpha=obj.CalImagesOrg.alpha;
-
-MM=zeros(n_drops,1);
-dx=1/beta;%[m/px]
-dy=dx;%[m/px]
-for i=1:n_drops
-    MM(i) = sum(sum(I_alpha(dp(i,2):dp(i,4),dp(i,1):dp(i,3))));
+narginchk(3,4);
+if nargin==3
+    Texp_ratio=[1,1,1];
 end
-alpha=MM*dx*dy/v_drop;    % [(calibrated)intensity/m]
-alpha=median(alpha);      % median alpha
 
-obj.CalPara.alpha=alpha;
-obj.CalPara.beta=beta*obj.CalPara.scale;
+obj.CalPara.gamma=gamma;
+obj.CalPara.visc_oil=visc_oil;
+obj.CalPara.Texp_ratio=Texp_ratio;
+
+if obj.oCase.flagScale==false
+    obj.oCase.setScale();
+end
+if obj.oCase.flagDrops==false
+    obj.oCase.setOilDrops();
+end
+
 obj.flagCalPara=true;
+
+
 end

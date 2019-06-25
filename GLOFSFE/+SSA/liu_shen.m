@@ -14,12 +14,16 @@ function [ Ux, Uy, error ] = liu_shen( In1, In2, Ux_mean, Uy_mean,...
 %   Ux, Uy: estimated optical flow
 %
 %
-%See also:
-% <a href="https://github.com/Tianshu-Liu/OpenOpticalFlow">
-%  OpenOpticalFlow</a>
-% <a href="http://doi.org/10.5334/jors.168"> Tianshu Liu, "OpenOpticalFlow:
-%  An Open Source Program for Extraction of Velocity Fields from Flow 
-%  Visualization Images"</a>
+% See also:
+%
+% * <https://github.com/Tianshu-Liu/OpenOpticalFlow 
+%    OpenOpticalFlow>
+%
+% * <http://doi.org/10.5334/jors.168
+%    Tianshu Liu, 
+%    "OpenOpticalFlow: An Open Source Program for Extraction of Velocity 
+%    Fields from Flow Visualization Images" 
+%    Journal of Open Research Software, 5(1), p.29. (2017)>
 % 
 % 
 % Original work:

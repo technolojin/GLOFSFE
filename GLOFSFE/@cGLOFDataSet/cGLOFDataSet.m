@@ -18,39 +18,56 @@ classdef cGLOFDataSet < matlab.mixin.Copyable
         oRuns            % run objs, cell
         
         CalImages        % Calibration images
-        Mask             % Mask image
         CalImagesOrg     % Original Calibration images
-        
+        Mask             % Mask image
+        ROI              % Region of Interest
+
         n_med            % median filter settings for Calibration images
-        mfld
+        mfld             % filtering cal image names, cell of strings
         
         ImgList          % GLOF image file list
         PairList         % GLOF image pair file index
         FileList         % GLOF image file index 
         
         datasize         % data size (ni,nj,nk,np)
+        OrgDim           % original image size (ni,nj)
+        ResDim           % rescaled image size (ni,nj)
         max_image
         
+        % image and grid buffers
         bufferSize
         bufferIndex
         ImgBuffer
+        CalImgBuffer
         BufferList
+        QueryGrid    
         
-        % calibration parameters
-        CalPara          % calibration parameters include followings, struct
-        % alpha          % image intensity per oil-thickness [1/meter]
-        % beta           % length scale [pixel/meter]
-        % gamma          % frame rate [frame/second]
-        % visc_oil       % viscosity of oil [Pa*s]
-        % scale          % image rescaling factor (0.5->50%)
-        % angle          % image rotating angle [deg]
+        %%% Calibration parameters include followings, struct
+        % alpha          image intensity per oil-thickness [1/meter]
+        % beta           length scale [pixel/meter]
+        % gamma          frame rate [frame/second]
+        % visc_oil       viscosity of oil [Pa*s]
+        % scale          image rescaling factor (0.5->50%)
+        % angle          image rotating angle [deg]
+        % CrdVtr        Coordinate vector on image. 2-by-n
+        % CrdVtr_p      Coordinate vector on projected image
+        % Texp          camera exposure time of run, alpha, background, and dark images 
+        CalPara          =struct('alpha',1,'beta',1,'gamma',1,'visc_oil',1,...
+                                 'scale',1,'angle',0,'CrdVtr',[],'CrdVtr_p',[],...
+                                 'Texp',struct('run',1,'alpha',1,'bg',1,'dark',1));
+
+        flagRescale      =false;     
+        flagRescaleReady =false;     
+        flagRescaleReadyGpu =false;  
+        flagRescaled     =false;     
         
-        flagImgLoaded
-        flagRescaled     %
-        flagRescale
-        flagImgCalibrated%
-        flagCalPara      %
-        flagSetBuffer    %
+        flagCalPara      =false;     
+        flagImgCalibrated=false;     
+        
+        flagImgLoaded    =false;     
+        flagDataChecked  =false;     
+        flagSetBuffer    =false;     
+        flagSetGpuBuffer =false;     
     end
     
     methods
@@ -72,75 +89,12 @@ classdef cGLOFDataSet < matlab.mixin.Copyable
                 error('inappropriate cGLOFRun');
             end
             
-            % initial values
-            obj.CalPara=struct('scale',1,'angle',0,...
-                'alpha',1,'beta',1,'gamma',1,'visc_oil',1);
-            obj.flagImgLoaded=false;
-            obj.flagRescaled=false;
-            obj.flagRescale=false;
-            obj.flagImgCalibrated=false;
-            obj.flagCalPara=false;
-            obj.flagSetBuffer=false;
+            % initial operation
             setRunImages(obj);
-        end
-    
-        function setRunImages(obj)            
-            CollectPairList(obj);
-            ni=obj.oRuns{1}.Dim(1);
-            nj=obj.oRuns{1}.Dim(2);
-            nk=size(obj.FileList,1);
-            np=size(obj.PairList,1);
-            
-            obj.datasize=[ni,nj,nk,np];
-            obj.max_image=obj.oRuns{1}.max_image;
-        end
-        
-        function LoadData(obj)
-            fprintf(1,'(%s) %s',obj.Name,'load dataset images...');
-            LoadCalImages(obj);
-            LoadMaskImages(obj);
-            setRunImages(obj);
-            obj.flagImgLoaded=true;
-            if obj.flagRescale==true
-                runRescaleRotImages(obj);
-            end
-            if obj.flagCalPara==true
-                setCalPara(obj);
-            end
-            fprintf(1,'%s\n','done');
-        end
-        
-        %%
-        % rescaling and rotating images
-        function setRescaleRot(obj,varargin)
-            if max(size(varargin))==1
-                scale=varargin{1};
-                angle=0;
-            elseif max(size(varargin))>=2
-                scale=varargin{1};
-                angle=varargin{2};
-            end
-            obj.CalPara.scale=scale;
-            obj.CalPara.angle=angle;
-            
-            obj.flagRescale=true;            
-        end
-        
-        % median filtering selected cal image(s)
-        function setMedianCalImages(obj,n_med,fld)
-            obj.n_med=n_med;
-            obj.mfld=cell(fld);
-        end
-        
-        %% image buffer
-        function [I1,I2]=getPair(obj,np)       
-            I1=getImage(obj,obj.PairList(np,1),obj.PairList(np,2));
-            I2=getImage(obj,obj.PairList(np,1),obj.PairList(np,3));    
         end
 
         %%
         function s = saveobj(obj)
-            
             s.Name=obj.Name;
             s.oCase=obj.oCase;
             s.oRuns=obj.oRuns;
@@ -148,11 +102,17 @@ classdef cGLOFDataSet < matlab.mixin.Copyable
             s.CalPara=obj.CalPara;
             s.n_med=obj.n_med;            
             s.mfld=obj.mfld;
+            s.datasize=obj.datasize;
+            
+            s.CalImages=obj.CalImages;
+            s.CalImagesOrg=obj.CalImagesOrg;
+            s.Mask=obj.Mask;
+            s.ROI=obj.ROI;
         
             s.flagRescale=obj.flagRescale;
             s.flagCalPara=obj.flagCalPara;
-            
         end
+        
         function save(obj,fname,varargin)
             s=obj.saveobj; %#ok<*NASGU>
             save(fname,'-struct','s',varargin{:});
@@ -168,9 +128,15 @@ classdef cGLOFDataSet < matlab.mixin.Copyable
                 obj.CalPara=s.CalPara;
                 obj.n_med=s.n_med; 
                 obj.mfld=s.mfld;
+                obj.datasize=s.datasize;
+                
+                obj.CalImages=s.CalImages;
+                obj.CalImagesOrg=s.CalImagesOrg;
+                obj.Mask=s.Mask; 
+                obj.ROI=s.ROI; 
+                
                 obj.flagRescale=s.flagRescale;
                 obj.flagCalPara=s.flagCalPara;
-
             else
                 obj=s;
             end
@@ -178,9 +144,8 @@ classdef cGLOFDataSet < matlab.mixin.Copyable
         function obj = load(fname)
             temp=load(fname);
             obj=cGLOFDataSet.loadobj(temp);
-        end
+        end        
     end
    
-    
-    
+
 end

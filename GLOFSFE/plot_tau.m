@@ -1,4 +1,4 @@
-function plot_tau(tau_x,tau_y,img)
+function plot_tau(tau_x, tau_y, img, fignumb)
 %PLOT_TAU plot skin friction field
 %
 %*1 Vector field (quiver) 
@@ -19,9 +19,20 @@ function plot_tau(tau_x,tau_y,img)
 % Released under the MIT license
 % http://opensource.org/licenses/mit-license.php
 
+if nargin<4
+    fignumb=0;
+end
+
+if size(tau_x,3)>1
+    tau_x=tau_x(:,:,1);
+    tau_y=tau_y(:,:,1);
+end
+
+tau_x(isnan(tau_x))=0;
+tau_y(isnan(tau_y))=0;
 
 %% tau vector field
-figure(1);
+figure(fignumb+1);
 axis xy;
 gx=35; offset=1;
 plot.quiver_mod (tau_x', tau_y', gx, offset,'LineWidth',0.8);
@@ -31,7 +42,7 @@ ylabel('y (pixels)');
 title('Skin Friction Vector Field');
 
 %% tau streamlines
-figure(2);
+figure(fignumb+2);
 colormap bone;
 axis xy;
 hold on;
@@ -47,16 +58,14 @@ title('Skin Friction Lines');
 %% tau magnitude field
 tau_mag=(tau_x.^2+tau_y.^2).^0.5;
 
-% Quantile of 90% to the range
-temp=sort(nonzeros(tau_mag(:)));
-nt=size(temp,1);
-v95=temp(floor(nt*0.95));
+% Quantile of 95% in the image
+imgq=plot.imgQuantile(tau_mag, [0,0.95]);
 
-figure(3);
+figure(fignumb+3);
 colormap jet;
 axis xy;
 hold on;
-imagesc(tau_mag',[0 v95]);
+imagesc(tau_mag',imgq);
 axis image;
 hold off;
 xlabel('x (pixels)');

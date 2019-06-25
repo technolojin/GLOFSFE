@@ -1,30 +1,36 @@
 %% Snapshot Solution Averaging method
-%This is the main script for GLOF-SFE using the Snapshot-Solution-Averaging
-%method which is developed by Prof. Tianshu Liu, Western Michigan
-%University. The main functions are from OpenOpticalFlow, modified by
-%Taekjin Lee. 
+% The main script for GLOF-SFE using the Snapshot-Solution-Averaging
+% method 
+% The method is developed by Prof. Tianshu Liu, Western Michigan
+% University. The main functions are from OpenOpticalFlow, modified by
+% Taekjin Lee. 
 %
 %
-%See also:
-% <a href="https://doi.org/10.2514/1.32219"> T. Liu, J. Montefort, 
-%  S. Woodiga, P. Merati, and L. Shen,"Global Luminescent Oil-Film 
-%  Skin-Friction Meter", AIAA Journal, 46:2, 476-485 (2008)</a>
-% <a href="https://doi.org/10.1063/1.5001388">Taekjin Lee, Taku Nonomura, 
-%   Keisuke Asai, and Tianshu Liu, "Linear least-squares method for global 
-%   luminescent oil film skin friction field analysis", Review of 
-%   Scientific Instruments 89, 065106 (2018)</a>
+% Method, Algorithm: 
+%
+% * <https://doi.org/10.2514/1.32219 
+%    T. Liu, J. Montefort, S. Woodiga, P. Merati, and L. Shen, 
+%    "Global Luminescent Oil-Film Skin-Friction Meter", 
+%    AIAA Journal, 46:2, 476-485 (2008)>
+%
+% * <https://doi.org/10.1063/1.5001388 
+%    Taekjin Lee, Taku Nonomura, Keisuke Asai, and Tianshu Liu, 
+%    "Linear least-squares method for global luminescent oil film skin 
+%    friction field analysis", 
+%    Review of Scientific Instruments 89, 065106 (2018)>
+% 
 % 
 % 
 % Copyright (c) 2018 Taekjin Lee
 % Released under the MIT license
 % http://opensource.org/licenses/mit-license.php
 
-%%
+%% initialization
 close all;
 clear;
-
 tic;
-%% conditions
+
+%% calibration parameters and conditions 
 alpha=1; % normalized image intensity per oilthickness [1/meter]
 beta=1; % pixel density [pixel/meter]
 gamma=1; % time resolution [frame/second]
@@ -38,10 +44,11 @@ maxnum1=30;
 maxnum2=30;
 
 %% data loading
-dir_img='../../data/lowAR_Tohoku/Case123/';
-dir_mask=[dir_img,'mask/mask.tif'];
+dir_data='../DATA/';
+dir_img=[dir_data,'./lowAR_Tohoku/Case123/'];
+dir_mask=[dir_img,'./mask/mask.tif'];
 % image format
-max_image=2^8; % 8 bit image
+max_image=2^8-1; % 8 bit image
 
 In=LoadImages(dir_img,'tif')/max_image;
 [ni,nj,nk]=size(In);
@@ -141,7 +148,7 @@ tau_y(isnan(tau_y))=0;
 tau_x(isinf(tau_x))=0;
 tau_y(isinf(tau_y))=0;
 
-% real scale
+% skin friction in real scale [Pa]
 realtau_x=tau_x*visc_oil*alpha*gamma/beta;
 realtau_y=tau_y*visc_oil*alpha*gamma/beta;
 

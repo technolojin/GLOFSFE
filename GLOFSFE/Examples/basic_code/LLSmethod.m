@@ -1,66 +1,57 @@
-function [ tau_x, tau_y ] = fLLS( oDataSet, option )
-%FLLS process a dataset to get skin friction field.
-%
-%SYNOPSIS:
-% [ tau_x, tau_y ] = fLLS( A ) 
-% [ tau_x, tau_y ] = fLLS( A, 'gpu') 
-%
-%INPUT:
-%   oDataSet: cGLOFDataSet object
-%   option: (opt) set 'gpu' if want to use 'Parallel Computing Toolbox'
-%
-%OUTPUT:
-%   tau_x, tau_y: estimated skin friction field
+%% Linear Least-Squares based method
+% This is the basic script for GLOF-SFE, the main function
+% (/GLOFSFE/fLLS.m) is unpacked into this script.
 %
 %
-%See also: 
-% cGLOFDataSet
-% gpuArray
-% <a href="https://doi.org/10.1063/1.5001388">Taekjin Lee, Taku Nonomura, 
-%   Keisuke Asai, and Tianshu Liu, "Linear least-squares method for global 
-%   luminescent oil film skin friction field analysis", Review of 
-%   Scientific Instruments 89, 065106 (2018)</a>
+% Method, Algorithm: 
+%
+% * <https://doi.org/10.1063/1.5001388 
+%    Taekjin Lee, Taku Nonomura, Keisuke Asai, and Tianshu Liu, 
+%    "Linear least-squares method for global luminescent oil film skin 
+%    friction field analysis", 
+%    Review of Scientific Instruments 89, 065106 (2018)>
 % 
-%
+% 
 % Copyright (c) 2018 Taekjin Lee
 % Released under the MIT license
 % http://opensource.org/licenses/mit-license.php
 
-narginchk(1,2);
+%% initialization
+close all;
+clear;
+tic;
 
-if nargin==1
-    use_gpu=0;
-else
-    if option=='gpu'
-        use_gpu=1;
-        disp('use GPGPU');
-    elseif option=='cpu'
-        use_gpu=0;
-    else
-        error('invalid method');
-    end
-end
+%% calibration parameters
+alpha=1; % normalized image intensity per oilthickness [1/meter]
+beta=1; % pixel density [pixel/meter]
+gamma=1; % time resolution [frame/second]
+visc_oil=1; % oil viscosity [Pa*s]
 
-Scell=ones(1);
+%% data loading
+dir_data='../DATA/';
+dir_img=[dir_data,'./lowAR_Tohoku/Case123/'];
+dir_mask=[dir_img,'./mask/mask.tif'];
+% image format
+max_image=2^8-1; % 8 bit image
+% load images
+In=LoadImages(dir_img,'tif')/max_image;
+% mask image (Region of Interest)
+mask=imread(dir_mask)/max_image;
+roi=mask>0.5;
+% image size
+[ni,nj,nk]=size(In);
+PairList=[1:nk-1;2:nk]';
+nk=size(PairList,1);
 
-%% dataset
-if oDataSet.flagImgLoaded==false
-    oDataSet.LoadData();
-end
-
-datasize=oDataSet.datasize;
-ni=datasize(1);
-nj=datasize(2);
-nk=datasize(4);
-
-roi=oDataSet.Mask;
-
-%% scheme 3
+%% LLS scheme matrices
 % tau vector follows face ni*nj
 % flux follows face ni*nj
 % residual unit around node (ni-1)*(nj-1)
 nM=ni*nj;
 nP=(ni-1)*(nj-1);
+
+% set integration area
+Scell=ones(1);
 
 % time average
 Mave=[spdiags(ones(nM,1),0,nM,nM),spdiags(ones(nM,1),0,nM,nM)]/2;
@@ -97,7 +88,7 @@ effVec=effVec>0;
 
 Meff = rdmtx( effVec );
 
-%%
+% summarized matrix
 A1=resMeff*Msigma*SumFlux*Diff_x;
 A2=Mc2f*Mave;
 A3=Meff';
@@ -109,30 +100,20 @@ nF=size(A2,1);
 C=sparse(1,1,0,nNeff,nNeff);
 d=zeros(nNeff,1);
 
-if use_gpu==1
-    A1=gpuArray(A1);
-    A2=gpuArray(A2);
-    A3=gpuArray(A3);
-    B1=gpuArray(B1);  
-    C=gpuArray(C);
-    d=gpuArray(d);
-end
 
-%%  loading images and LLS matrix
-
-fprintf(1,'%s %5.1f%%','load LLS matrix : ',0);
+%% loading images and calculate LLS matrices
+fprintf(1,'%s %5.1f%%','Load images and calculate LLS matrices: ',0);
 for k=1:nk
     fprintf(1,'\b\b\b\b\b\b');
     fprintf(1,'%5.1f%%',k/nk*100);
     
-    [h1,h2]=oDataSet.getPair(k);
+    h1=In(:,:,PairList(k,1));
+    h2=In(:,:,PairList(k,2));
     
     h=[h1(:);h2(:)];
-    if use_gpu==1
-        h=gpuArray(h);
-    end
+
     hf=A2*h;
-    hh=sparse(1:nF,1:nF,hf.*hf/2,nF,nF);
+    hh=spdiags(hf.*hf/2,0,nF,nF);
     
     Ak=A1*hh*A3;    
     Bk=B1*h;
@@ -143,18 +124,12 @@ for k=1:nk
     
 end
 
-if use_gpu==1
-    C=gather(C);
-    d=gather(d);
-end
-
 %% LLS
-fprintf(1,['\n','calculate LLS...\n']);
+fprintf(1,'\n%s\n','Solve the linear system...');
 spparms('spumoni',1);
-%C(end,end-1)=1E-20; % trick to select UMFPACK solver
 
 tau_eff=-(C)\(d);
-tau=Meff'*tau_eff;
+tau=A3*tau_eff;
 tau=reshape(tau,[ni nj 2]);
 
 tau_x=tau(:,:,1);
@@ -169,5 +144,16 @@ tau_y=conv2(tau_y,f_v2n','valid').*mask_node;
 
 fprintf(1,'%s \n','done');
 
-end
+% the last image
+img=In(:,:,PairList(nk,1));
 
+% skin friction in real scale [Pa]
+realtau_x=tau_x*visc_oil*alpha*gamma/beta;
+realtau_y=tau_y*visc_oil*alpha*gamma/beta;
+
+fprintf(1,'Execution time:  %s\n',sec2text(toc));
+
+%% plot
+plot_tau(tau_x,tau_y,img);
+
+beep;

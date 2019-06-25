@@ -1,6 +1,6 @@
 function [ Ux, Uy, error ] = horn_schunck( In1, In2, mask_1st, mask_2nd,...
     lambda, maxnum)
-%HORN_SCHUNCK horn-schunck optical flow estimator
+% HORN_SCHUNCK horn-schunck optical flow estimator
 % 
 % INPUT:
 %   In1, In2: image matrix 
@@ -13,17 +13,23 @@ function [ Ux, Uy, error ] = horn_schunck( In1, In2, mask_1st, mask_2nd,...
 %   Ux, Uy: estimated optical flow
 %
 %
-%See also:
-% <a href="https://github.com/Tianshu-Liu/OpenOpticalFlow">
-%  OpenOpticalFlow</a>
-% <a href="http://doi.org/10.5334/jors.168"> Tianshu Liu, "OpenOpticalFlow:
-%  An Open Source Program for Extraction of Velocity Fields from Flow 
-%  Visualization Images"</a>
+% See also:
+%
+% * <https://github.com/Tianshu-Liu/OpenOpticalFlow 
+%    OpenOpticalFlow>
+%
+% * <http://doi.org/10.5334/jors.168
+%    Tianshu Liu, 
+%    "OpenOpticalFlow: An Open Source Program for Extraction of Velocity 
+%    Fields from Flow Visualization Images" 
+%    Journal of Open Research Software, 5(1), p.29. (2017)>
 %
 %
-% Original work Copyright (c) 2017 Tianshu Liu
+% Original work 
+% Copyright (c) 2017 Tianshu Liu
 % Released under the MIT license
-%
+% 
+% Modified:
 % Copyright (c) 2018 Taekjin Lee
 % Released under the MIT license
 % http://opensource.org/licenses/mit-license.php

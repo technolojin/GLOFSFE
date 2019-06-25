@@ -15,7 +15,7 @@ classdef cGLOFCase < matlab.mixin.Copyable
         
         % data
         % calibration images
-        % 1:dark 2:bg 3:exc 4:scale 5:alpha
+        % 1:dark 2:bg 3:exc 4:scale 5:alpha(droplet)
         DirCal         % directories of calibration images folder, struct
         
         cal_fmt        % cal image format
@@ -90,20 +90,10 @@ classdef cGLOFCase < matlab.mixin.Copyable
         end
         
         function s = saveobj(obj)
-            s.Name = obj.Name;
-            s.Conditions = obj.Conditions;
-            
-            s.DirCal=obj.DirCal;
-            s.cal_fmt=obj.cal_fmt;
-            s.max_image=obj.max_image;
-            s.FileMask=obj.FileMask;
-            
-            s.scale_points=obj.scale_points;
-            s.scale_length=obj.scale_length;
-            s.flagScale=obj.flagScale;
-            s.oil_drops=obj.oil_drops;
-            s.v_drop=obj.v_drop;
-            s.flagDrops=obj.flagDrops;
+            f = properties(obj)';
+            for n=1:size(f(:),1)
+                s.(f{n})=obj.(f{n});
+            end
         end
         function save(obj,fname,varargin)
             s=obj.saveobj; %#ok<*NASGU>
@@ -116,21 +106,10 @@ classdef cGLOFCase < matlab.mixin.Copyable
         function obj = loadobj(s)
             if isstruct(s)
                 obj=cGLOFCase(s.Name);
-                obj.Name=s.Name;
-                obj.Conditions=s.Conditions;             
-                
-                obj.DirCal=s.DirCal;
-                obj.cal_fmt=s.cal_fmt;
-                obj.max_image=s.max_image;
-                obj.FileMask=s.FileMask;
-                
-                obj.scale_points=s.scale_points;
-                obj.scale_length=s.scale_length;
-                obj.flagScale=s.flagScale;
-                obj.oil_drops=s.oil_drops;
-                obj.v_drop=s.v_drop;
-                obj.flagDrops=s.flagDrops;
-                
+                f=fieldnames(s)';
+                for n=1:size(f(:),1)
+                    obj.(f{n})=s.(f{n});
+                end
             else
                 obj=s;
             end

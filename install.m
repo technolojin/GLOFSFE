@@ -1,2 +1,2 @@
-addpath([pwd,'\GLOFSFE\']);
+addpath([pwd,'/GLOFSFE/']);
 savepath;

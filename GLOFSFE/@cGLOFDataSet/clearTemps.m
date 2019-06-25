@@ -1,7 +1,11 @@
 function clearTemps(obj)
 obj.ImgBuffer=[];
+obj.CalImgBuffer=[];
 obj.flagSetBuffer=false;
-for r=1:size(obj.oRuns,1)
-    obj.oRuns{r}.clearMat;
-end
+obj.flagSetGpuBuffer=false;
+
+obj.QueryGrid=[];
+obj.flagRescaleReady=false;
+obj.flagRescaleReadyGpu=false;
+
 end

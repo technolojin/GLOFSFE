@@ -46,7 +46,7 @@ classdef cGLOFImageSet < handle
                 flagReadbit=true;
                 obj.Dir=Idir;
                 obj.fmt=fmt;
-                if nargin==4
+                if nargin==3
                     obj.max_image=max_image;
                     flagReadbit=false;
                 end
@@ -57,7 +57,7 @@ classdef cGLOFImageSet < handle
                 if size(File_Names,1)==0
                     error('no directory/file was found\n%s',fullfile(obj.Dir,['*.',fmt]));
                 end
-                Im1=imread([obj.Dir,File_Names{1}]);
+                Im1=LoadImages([obj.Dir,File_Names{1}]);
                 [ni,nj]=size(Im1);
                 nk=size(File_Names,2);
                 
@@ -71,9 +71,9 @@ classdef cGLOFImageSet < handle
                 % decide max_image
                 if flagReadbit
                     if isa(Im1,'uint8')
-                        obj.max_image=2^8;
+                        obj.max_image=2^8-1;
                     elseif isa(Im1,'uint16')
-                        obj.max_image=2^16;
+                        obj.max_image=2^16-1;
                     elseif isa(Im1,'logical')
                         obj.max_image=1;
                     end
@@ -82,7 +82,7 @@ classdef cGLOFImageSet < handle
             obj.flagMatLoaded=false;
         end
         
-        %%
+        %% images given in matrix
         function importMat(obj,In)
             obj.In=In;
             obj.flagMatLoaded=true;
@@ -99,14 +99,14 @@ classdef cGLOFImageSet < handle
             obj.In=[];
             obj.flagMatLoaded=false;
         end
-        %%
+        %% load image from file(s)
         % get a image
         function I=getI(obj,k)
             if obj.flagMatfile
                 loadMat(obj);
                 I=obj.In(:,:,k);
             else
-                I=double(imread(obj.FileList{k}))/obj.max_image;
+                I=LoadImages(obj.FileList{k})/obj.max_image;
             end
         end
         % get images

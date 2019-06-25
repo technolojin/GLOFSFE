@@ -1,2 +1,2 @@
-rmpath([pwd,'\GLOFSFE\']);
+rmpath([pwd,'/GLOFSFE/']);
 savepath;

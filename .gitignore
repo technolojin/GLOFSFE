@@ -1,5 +1,7 @@
-/data/*
+/GLOFSFE/Examples/DATA/*
 
 *.asv
 *.mat
 *.tif
+*.avi
+*.mp4
