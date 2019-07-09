@@ -1,13 +1,13 @@
-function LLS( obj, varargin )
+function LLS( obj, use_gpu )
 %LLS process a dataset to get skin friction field.
 %
 %SYNOPSIS:
-% LLS( cGLOFLLS )
-% LLS( cGLOFLLS, 'gpu')
+% LLS( cGLOFLLS, false )
+% LLS( cGLOFLLS, true )
 %
 %INPUT:
 %   cGLOFLLS: cGLOFLLS object
-%   option: (opt) set 'gpu' if want to use 'Parallel Computing Toolbox'
+%   use_gpu: set true if want to use 'Parallel Computing Toolbox'
 %
 %See also:
 % cGLOFDataSet
@@ -22,11 +22,10 @@ function LLS( obj, varargin )
 % Released under the MIT license
 % http://opensource.org/licenses/mit-license.php
 
-narginchk(1,2);
-use_gpu = ComputingOpt(varargin{:});
 
 %% inputs
 oDataSet=obj.oDataSet;
+PairMask=obj.PairMask;
 Scell=ones(1);
 
 %% dataset
@@ -40,22 +39,34 @@ nj=datasize(2);
 nk=datasize(4);
 
 roi_img=oDataSet.getROI();
+nW=size(roi_img,3);
 
+%% Temporal Mask
+if size(PairMask,1)~=nk
+    error('PairMask size is not matching.');
+elseif size(PairMask,2)==1
+    PairMask=repmat(PairMask,[1,nW]);
+elseif size(PairMask,2)~=nW
+    error('PairMask size is not matching.');
+end
+
+listk=find(sum(PairMask,2));
+nkw=sum(PairMask,1);
+nke=size(listk(:),1);
 
 %% scheme and initial matrices
 % multiple roi (in 3rd dim)
-nW=size(roi_img,3);
 
 % roi
 roi_node=true(ni-1,nj-1,nW);
+roi_cell=true(ni-1,nj-1,nW);
 roi_tau_x=true(ni,nj,nW);
 roi_tau_y=true(ni,nj,nW);
             
 for w=1:nW
-    roi_n=conv2(roi_img(:,:,w),ones(2),'valid');
+    roi_n=conv2(single(roi_img(:,:,w)),ones(2),'valid');
     roi_n=roi_n==4;
     roi_node(:,:,w)=roi_n;
-    
 end
 
 
@@ -75,7 +86,7 @@ cd=cell(nW,1);
 for w=1:nW
     
     % get effective dimension matrices
-    [ resMeff,Meff,roi_node(:,:,w),roi_tau_x(:,:,w),roi_tau_y(:,:,w)]=...
+    [ resMeff,Meff,roi_node(:,:,w),roi_tau_x(:,:,w),roi_tau_y(:,:,w),roi_cell(:,:,w)]=...
         obj.fEffMat( Mc2f,SumFlux,Msigma,Diff_x,roi_img(:,:,w) );
     
     A1=resMeff*Msigma*SumFlux*Diff_x;
@@ -137,9 +148,16 @@ end
 
 %% loading images and calculate LLS matrices
 fprintf(1,'%s %5.1f%%','Load images and calculate LLS matrices: ',0);
+kidx=0;
 for k=1:nk
+    
+    if ~any(listk==k)
+        continue
+    end
+        
+    kidx=kidx+1;
     fprintf(1,'\b\b\b\b\b\b');
-    fprintf(1,'%5.1f%%',k/nk*100);
+    fprintf(1,'%5.1f%%',kidx/nke*100);
     
     [h1,h2]=oDataSet.getPair(k,use_gpu);
     
@@ -151,6 +169,9 @@ for k=1:nk
     
     % on each roi
     for w=1:nW
+        if ~PairMask(k,w)
+            continue
+        end
         Ak=cA1{w}*hh*cA3{w};
         AkT=cA3T{w}*hh*cA1T{w};
         Bk=cB1{w}*h;
@@ -182,8 +203,8 @@ for k=1:nk
     U(:,:,2)=U(:,:,2)+Uy;
 end
 
-img_ave=img_ave./nk./2;
-Uave=U./nk;
+img_ave=img_ave./nke./2;
+Uave=U./nke;
 
 if use_gpu
     img_ave=gather(img_ave);
@@ -209,6 +230,10 @@ dKeep=cell(nW,1);
 bKeep=cell(nW,1);
 tau=cell(nW,1);
 for w=1:nW 
+    if nW~=1
+        fprintf(1,'(%d/%d): ',w,nW);
+    end
+
     C=cC{w};
     d=cd{w};
     A3=cA3{w};
@@ -228,14 +253,15 @@ for w=1:nW
     
     % Modify ROI when ill-posed node is included
     roi_n=roi_node(:,:,w);
-    if sum( Cdet( roi_n )==0 )>0
+%     threshold=eps*2^16;
+    threshold=eps*2^2;
+    if sum( abs(Cdet(roi_n))<=threshold ) > 0
         fprintf(1,'Modify ROI to avoid ill-posed nodes\n');
-        roi_mod=abs(Cdet)>eps*2^3;
-        roi_mod=conv2(roi_mod,ones(2),'full');
+        roi_mod=abs(Cdet)>threshold;
+        roi_mod=conv2(single(roi_mod),ones(2),'full');
         roi_mod= roi_mod>0 & roi_img(:,:,w);
- 
                 
-        [ ~,Meffmod,roi_node(:,:,w),roi_tau_x(:,:,w),roi_tau_y(:,:,w)]=...
+        [ ~,Meffmod,roi_node(:,:,w),roi_tau_x(:,:,w),roi_tau_y(:,:,w),roi_cell(:,:,w)]=...
             obj.fEffMat( Mc2f,SumFlux,Msigma,Diff_x,roi_mod );
         roi_img(:,:,w)=roi_mod;
         
@@ -245,11 +271,13 @@ for w=1:nW
         A3=Meffmod';
     end
     
+    % Solution of LLS
     tau_eff=-(C)\(d);
+    
     tau{w}=A3*tau_eff;
     CKeep{w}=C;
     dKeep{w}=d;
-    bKeep{w}=Bave./nk;
+    bKeep{w}=Bave./nkw(w);
 end
 tau=cell2mat(tau');
 
@@ -275,6 +303,7 @@ obj.img.ave=img_ave;
 
 obj.roi.img=roi_img;
 obj.roi.node=roi_node;
+obj.roi.cell=roi_cell;
 obj.roi.tau_x=roi_tau_x;           
 obj.roi.tau_y=roi_tau_y;
 

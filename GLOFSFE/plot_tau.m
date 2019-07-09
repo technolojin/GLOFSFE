@@ -20,7 +20,7 @@ function plot_tau(tau_x, tau_y, img, fignumb)
 % http://opensource.org/licenses/mit-license.php
 
 if nargin<4
-    fignumb=0;
+    fignumb=1;
 end
 
 if size(tau_x,3)>1
@@ -32,7 +32,7 @@ tau_x(isnan(tau_x))=0;
 tau_y(isnan(tau_y))=0;
 
 %% tau vector field
-figure(fignumb+1);
+figure(fignumb);
 axis xy;
 gx=35; offset=1;
 plot.quiver_mod (tau_x', tau_y', gx, offset,'LineWidth',0.8);
@@ -42,7 +42,7 @@ ylabel('y (pixels)');
 title('Skin Friction Vector Field');
 
 %% tau streamlines
-figure(fignumb+2);
+figure(fignumb+1);
 colormap bone;
 axis xy;
 hold on;
@@ -61,7 +61,7 @@ tau_mag=(tau_x.^2+tau_y.^2).^0.5;
 % Quantile of 95% in the image
 imgq=plot.imgQuantile(tau_mag, [0,0.95]);
 
-figure(fignumb+3);
+figure(fignumb+2);
 colormap jet;
 axis xy;
 hold on;

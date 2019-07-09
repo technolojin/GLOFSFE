@@ -1,4 +1,4 @@
-function sens_analy = SensAnaly(obj,n,varargin)
+function sens_analy = SensAnaly(obj,n,use_gpu)
 % image noise sensitivity analysis
 %
 %SYNOPSIS:
@@ -26,11 +26,9 @@ function sens_analy = SensAnaly(obj,n,varargin)
 % Released under the MIT license
 % http://opensource.org/licenses/mit-license.php
 
-narginchk(2,3);
-use_gpu = ComputingOpt(varargin{:});
 
 %%
-roi=obj.oDataSet.getROI();
+roi=obj.roi.img;
 oDataSet=obj.oDataSet;
 tau=obj.tau(:,n); 
 roi=roi(:,:,n); 
@@ -51,7 +49,7 @@ nk=datasize(4);
 %% scheme and initial matrixes
 
 [ Mave,Mc2f,SumFlux,Msigma,Diff_x,Diff_t ]=obj.fScheme( ni,nj,Scell );
-[ resMeff,Meff,~,~,~ ] = obj.fEffMat( Mc2f,SumFlux,Msigma,Diff_x,roi );
+[ resMeff,Meff,~,~,~,~ ] = obj.fEffMat( Mc2f,SumFlux,Msigma,Diff_x,roi );
 
 A1=resMeff*Msigma*SumFlux*Diff_x;
 A2=Mc2f*Mave;

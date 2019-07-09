@@ -24,7 +24,8 @@ if ~isempty(obj.ROI)
 end
 
 % update datasize
-[ni,nj]=size(img);
+ni=size(img,1);
+nj=size(img,2);
 obj.datasize=[ni,nj,obj.datasize(3),obj.datasize(4)];
 
 % flag

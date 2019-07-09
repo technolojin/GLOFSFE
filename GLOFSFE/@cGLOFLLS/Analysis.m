@@ -29,6 +29,7 @@ narginchk(1,2);
 use_gpu = ComputingOpt(varargin{:});
 
 oDataSet=obj.oDataSet;
+PairMask=obj.PairMask;
 tau=obj.tau;
 bAve=obj.bAve;
 Uave=obj.Uave;
@@ -45,11 +46,25 @@ ni=datasize(1);
 nj=datasize(2);
 nk=datasize(4);
 
-roi=oDataSet.getROI();
+roi=obj.roi.img;
+nW=size(roi,3);
+
+%% Temporal Mask
+if size(PairMask,1)~=nk
+    error('PairMask size is not matching.');
+elseif size(PairMask,2)==1
+    PairMask=repmat(PairMask,[1,nW]);
+elseif size(PairMask,2)~=nW
+    error('PairMask size is not matching.');
+end
+
+listk=find(sum(PairMask,2));
+nkw=sum(PairMask,1);
+nke=size(listk(:),1);
 
 %% scheme and initial matrices
 % multiple roi (in 3rd dim)
-nW=size(roi,3);
+
 cA1=cell(nW,1);
 cB1=cell(nW,1);
 cBave=cell(nW,1);
@@ -112,9 +127,16 @@ end
 
 %% loading images and calculate LLS matrix
 fprintf(1,'%s %5.1f%%','Analyse LLS: ',0);
+kidx=0;
+
 for k=1:nk
+    
+    if ~any(listk==k)
+        continue
+    end
+    kidx=kidx+1;
     fprintf(1,'\b\b\b\b\b\b');
-    fprintf(1,'%5.1f%%',k/nk*100);
+    fprintf(1,'%5.1f%%',kidx/nke*100);
     
     [h1,h2]=oDataSet.getPair(k,use_gpu);
     
@@ -124,6 +146,9 @@ for k=1:nk
     hf=A2*h;
     hh=sparse(1:nF,1:nF,hf.*hf/2,nF,nF);
     for w=1:nW
+        if ~PairMask(k,w)
+            continue
+        end
         Ak=cA1{w}*hh;
         Bk=cB1{w}*h;
         
@@ -145,8 +170,8 @@ for k=1:nk
     
 end
 
-Urms=(Urms./nk).^0.5;
-img_rms=sqrt(img_rms./nk);
+Urms=(Urms./nke).^0.5;
+img_rms=sqrt(img_rms./nke);
 
 if use_gpu==1
     Urms=gather(Urms);

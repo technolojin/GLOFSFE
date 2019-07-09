@@ -37,6 +37,9 @@ classdef cGLOFRun < cGLOFImageSet
                     error('not proper PairList size');
                 end
             end
+            if max(obj.PairList(:))>obj.Dim(3)
+                error('PairList index exceeded the total image number');
+            end
             obj.np=size(obj.PairList,1);
         end
         

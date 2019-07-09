@@ -1,12 +1,11 @@
 function [ In ] = LoadImages(input_path,fmt,nk,p)
 narginchk(1,4);
 
-if nargin==1
+if nargin==1 || exist(input_path,'file')==2
     % input a file
     [input_path,File_Names,fmt] = fileparts(input_path);
     File_Names={strcat(File_Names,fmt)};
-    tt= split(fmt,'.');
-    fmt=tt{end};
+    fmt=fmt(2:end);
     nk=1;
     p=1;
 else

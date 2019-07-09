@@ -13,7 +13,9 @@ classdef cGLOFLLS < handle
         tau
         tau_x
         tau_y
-        roi=struct('img',[],'node',[],'tau_x',[],'tau_y',[]);
+        
+        PairMask=[];
+        roi=struct('img',[],'node',[],'cell',[],'tau_x',[],'tau_y',[]);
         
         tau_local
         Uave
@@ -47,11 +49,37 @@ classdef cGLOFLLS < handle
         end
         
         function runLLS(obj,oDataSet,varargin)
-            narginchk(2,3);
+            narginchk(2,4);
+            option=[];
+            PairMask_in=[];
+            
+            if nargin>2
+                for n=1:nargin-2
+                    in=varargin{n};
+                    if isnumeric(in)
+                        PairMask_in=in;
+                    elseif ischar(in)
+                        option=in;
+                    end
+                end
+            end
+            if ~isempty(obj.PairMask)
+               PairMask_in=obj.PairMask;
+            end
+            if isempty(option)
+                option='cpu';
+            end
+            if isempty(PairMask_in)
+                PairMask_in=ones(oDataSet.datasize(4),1);
+            end
             
             obj.oDataSet=oDataSet;
+            obj.PairMask=PairMask_in;
+            
+            use_gpu = ComputingOpt(option);
+            
             % calculate LLS
-            LLS(obj,varargin{:}); 
+            LLS(obj,use_gpu); 
             
             % clear image buffer
             obj.oDataSet.clearTemps;
@@ -86,6 +114,7 @@ classdef cGLOFLLS < handle
                 return
             end
             narginchk(1,2);
+            use_gpu = ComputingOpt(varargin{:});
             
             % sensitivity field
             roi_img=obj.oDataSet.getROI();
@@ -101,13 +130,13 @@ classdef cGLOFLLS < handle
                 maxSize=userview.MaxPossibleArrayBytes;
                 if usingSize*34<maxSize
                     try
-                        obj.sens_analy{n} = obj.SensAnaly(n, varargin{:}); 
+                        obj.sens_analy{n} = obj.SensAnaly(n, use_gpu); 
 
                     catch ME
-                        fprintf(1,['\n===fSensAnaly ERROR===\n',...
+                        fprintf(1,['\n===SensAnaly ERROR===\n',...
                                      'using memory: %.3e\n',...
                                      'message: %s\n',...
-                                     '======================\n'],usingSize,ME.identifier);
+                                     '=====================\n'],usingSize,ME.identifier);
                     end
                 else
                     fprintf(1,'ROI %d: matrix is too large.\n',n);
@@ -121,20 +150,21 @@ classdef cGLOFLLS < handle
         
         function runSensStat(obj,sigma,nSample,varargin)
             % image noise sensitivity
-            % in statistical method
+            % in statistical(Monte Carlo) method
             % sigma: noise size
             % nSample: sampling number
             
             narginchk(3,4);
+            use_gpu = ComputingOpt(varargin{:});
             
             obj.sens_stat.nSample=nSample;
             obj.sens_stat.sigma=sigma;
             try
-                SensStat(obj, varargin{:});
+                obj.SensStat(use_gpu);
             catch ME
-                fprintf(1,['\n===fSensStat ERROR===\n',...
+                fprintf(1,['\n===SensStat ERROR===\n',...
                              'message: %s\n',...
-                             '=====================\n'],ME.identifier);
+                             '====================\n'],ME.identifier);
             end
             % clear image buffer
             obj.oDataSet.clearTemps;
@@ -209,7 +239,7 @@ classdef cGLOFLLS < handle
         % get scheme matrices
         [ Mave,Mc2f,SumFlux,Msigma,Diff_x,Diff_t ] = fScheme( ni,nj,Scell );
         % get effective dimension matrices
-        [ resMeff,Meff,roi_node,roi_vec_x,roi_vec_y] = fEffMat( Mc2f,SumFlux,Msigma,Diff_x,roi );
+        [ resMeff,Meff,roi_node,roi_vec_x,roi_vec_y,roi_cell] = fEffMat( Mc2f,SumFlux,Msigma,Diff_x,roi );
         
         % get velocity field
         [ Ux,Uy ] = fOpticalFlow( h1, h2 );

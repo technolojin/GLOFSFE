@@ -12,6 +12,13 @@ end
 
 % read option
 option=varargin{1};
+
+% return if the input is logical
+if islogical(option) || isequal(option,1) || isequal(option,0)
+    use_gpu=logical(option);
+    return
+end
+
 if strcmpi(option,'gpu')
     use_gpu=true;
 elseif strcmpi(option,'cpu')

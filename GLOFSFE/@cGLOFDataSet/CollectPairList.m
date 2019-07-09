@@ -16,10 +16,10 @@ allfl=zeros(nallfl,2);
 idx_pl=0;
 idx_fl=0;
 for r=1:nr
-    allpl(idx_pl+1:idx_pl+npl(r),1)=r;
-    allpl(idx_pl+1:idx_pl+npl(r),2:3)=obj.oRuns{r}.PairList;
+    allpl(idx_pl+1:idx_pl+npl(r),1)=r; % run index
+    allpl(idx_pl+1:idx_pl+npl(r),2:3)=obj.oRuns{r}.PairList; % image index
     allpl(idx_pl+1:idx_pl+npl(r),4)=...
-        obj.oRuns{r}.PairList(2)-obj.oRuns{r}.PairList(1);
+        obj.oRuns{r}.PairList(2)-obj.oRuns{r}.PairList(1); % interval
     
     allfl(idx_fl+1:idx_fl+nfl(r),1)=r;
     allfl(idx_fl+1:idx_fl+nfl(r),2)=1:nfl(r);

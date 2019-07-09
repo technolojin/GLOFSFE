@@ -1,9 +1,6 @@
-function SensStat( obj, varargin )
-% image noise sensitivity analysis
-% add arbitrary image noise and measure estimated tau variance
-
-narginchk(1,2);
-use_gpu = ComputingOpt(varargin{:});
+function SensStat( obj, use_gpu )
+% Image noise sensitivity analysis by the Monte Carlo method
+% Add arbitrary image noise and measure variance of estimated tau
 
 nSample=obj.sens_stat.nSample;
 sigma=obj.sens_stat.sigma;
@@ -30,7 +27,7 @@ ni=datasize(1);
 nj=datasize(2);
 nk=datasize(4);
 
-roi=oDataSet.getROI();
+roi=obj.roi.img;
 
 %% scheme and initial matrixes
 % multiple roi (in 3rd dim)
@@ -49,7 +46,7 @@ cd=cell(nW,nSample);
 
 for w=1:nW
 
-    [ resMeff,Meff,~,~,~ ] = obj.fEffMat( Mc2f,SumFlux,Msigma,Diff_x,roi(:,:,w)  );
+    [ resMeff,Meff,~,~,~,~ ] = obj.fEffMat( Mc2f,SumFlux,Msigma,Diff_x,roi(:,:,w)  );
     
     A1=resMeff*Msigma*SumFlux*Diff_x;
     A2=Mc2f*Mave;

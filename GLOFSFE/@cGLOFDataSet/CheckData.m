@@ -65,6 +65,7 @@ if ~isempty(FileMask)
         maskDim=size(mask);
     elseif isnumeric(FileMask)||islogical(FileMask)
         maskDim=size(FileMask);
+        maskDim=maskDim(1:2);
     end
     if ~isequal(runDim,maskDim)
         error('mask image size is not matching');
