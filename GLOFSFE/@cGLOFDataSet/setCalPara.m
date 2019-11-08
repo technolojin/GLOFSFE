@@ -10,13 +10,14 @@ obj.CalPara.visc_oil=visc_oil;
 obj.CalPara.Texp_ratio=Texp_ratio;
 
 if obj.oCase.flagScale==false
-    obj.oCase.setScale();
+    obj.oCase.setScale(); % input scale points if calibration directory is set
 end
 if obj.oCase.flagDrops==false
-    obj.oCase.setOilDrops();
+    obj.oCase.setOilDrops(); % input droplet points if calibration directory is set
 end
 
-obj.flagCalPara=true;
-
+if obj.oCase.flagScale && obj.oCase.flagDrops
+    obj.flagCalPara=true;
+end
 
 end

@@ -103,6 +103,7 @@ end
 
 sens_analy=A3*sens_analy;
 sens_analy=reshape(sens_analy.^0.5,ni,nj,2);
+sens_analy=single(sens_analy);
             
 fprintf(1,'   done \n');
 

@@ -46,7 +46,7 @@ for n=1:nW
     
     
 end
-obj.tau_x=Mtau_x;
-obj.tau_y=Mtau_y;
+obj.tau_x=single(Mtau_x);
+obj.tau_y=single(Mtau_y);
 
 end

@@ -1,9 +1,9 @@
 function runRescaleRotCalMask(obj)
 % cal images
-fld=fieldnames(obj.CalImages);
-nk=size(fld,1);
-for k=1:nk
-    img=obj.runRescaleRot(obj.CalImagesOrg.(fld{k}),0);
+% fld=fieldnames(obj.CalImages);
+fld={'offset';'denomi';'scale'};
+for k=1:size(fld,1)
+    img=obj.runRescaleRot(obj.CalImages.(fld{k}),0);
     %img(isnan(img))=0;
     obj.CalImages.(fld{k})=img;
 end

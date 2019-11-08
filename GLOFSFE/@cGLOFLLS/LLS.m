@@ -160,6 +160,7 @@ for k=1:nk
     fprintf(1,'%5.1f%%',kidx/nke*100);
     
     [h1,h2]=oDataSet.getPair(k,use_gpu);
+    intv=oDataSet.PairList(k,3)-oDataSet.PairList(k,2);
     
     h=[h1(:);h2(:)];
     img_ave=img_ave+(h1+h2);
@@ -174,7 +175,7 @@ for k=1:nk
         end
         Ak=cA1{w}*hh*cA3{w};
         AkT=cA3T{w}*hh*cA1T{w};
-        Bk=cB1{w}*h;
+        Bk=cB1{w}*h/intv;
         
         % accumulate LLS matrix
         cC{w}=cC{w}+AkT*Ak;
@@ -189,7 +190,7 @@ for k=1:nk
     hhm=(hm.^2)/2;
     hhx=conv2(hhm,[1,1;-1,-1]/2,'valid');
     hhy=conv2(hhm,[1,-1;1,-1]/2,'valid');
-    ht=conv2(-h1+h2,ones(2)/4,'valid');
+    ht=conv2(-h1+h2,ones(2)/4,'valid')/intv;
     
     Clocal(:,:,1)=Clocal(:,:,1)+hhx.^2  ;
     Clocal(:,:,2)=Clocal(:,:,2)+hhx.*hhy;
@@ -199,8 +200,8 @@ for k=1:nk
     
     % optical flow
     [ Ux,Uy ] = obj.fOpticalFlow( h1, h2 );
-    U(:,:,1)=U(:,:,1)+Ux;
-    U(:,:,2)=U(:,:,2)+Uy;
+    U(:,:,1)=U(:,:,1)+Ux/intv;
+    U(:,:,2)=U(:,:,2)+Uy/intv;
 end
 
 img_ave=img_ave./nke./2;
@@ -253,7 +254,6 @@ for w=1:nW
     
     % Modify ROI when ill-posed node is included
     roi_n=roi_node(:,:,w);
-%     threshold=eps*2^16;
     threshold=eps*2^2;
     if sum( abs(Cdet(roi_n))<=threshold ) > 0
         fprintf(1,'Modify ROI to avoid ill-posed nodes\n');
@@ -287,19 +287,19 @@ spparms('spumoni',0);
 % save the last image
 lastimg=oDataSet.ImgBuffer(:,:,oDataSet.bufferIndex);
 if use_gpu==1
-    obj.img.ins=gather(lastimg);
+    obj.img.ins=single(gather(lastimg));
 else
-    obj.img.ins=lastimg;
+    obj.img.ins=single(lastimg);
 end
 
 % return results
 obj.tau=tau;
-obj.tau_local=tau_local;
+obj.tau_local=single(tau_local);
 obj.Uave=Uave;
 obj.C=CKeep;
 obj.d=dKeep;
 obj.bAve=bKeep;
-obj.img.ave=img_ave;
+obj.img.ave=single(img_ave);
 
 obj.roi.img=roi_img;
 obj.roi.node=roi_node;

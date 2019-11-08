@@ -18,7 +18,7 @@ classdef cGLOFDataSet < matlab.mixin.Copyable
         oRuns            % run objs, cell
         
         CalImages        % Calibration images
-        CalImagesOrg     % Original Calibration images
+%         CalImagesOrg     % Original Calibration images
         Mask             % Mask image
         ROI              % Region of Interest
 
@@ -105,7 +105,7 @@ classdef cGLOFDataSet < matlab.mixin.Copyable
             s.datasize=obj.datasize;
             
             s.CalImages=obj.CalImages;
-            s.CalImagesOrg=obj.CalImagesOrg;
+%             s.CalImagesOrg=obj.CalImagesOrg;
             s.Mask=obj.Mask;
             s.ROI=obj.ROI;
         
@@ -131,7 +131,7 @@ classdef cGLOFDataSet < matlab.mixin.Copyable
                 obj.datasize=s.datasize;
                 
                 obj.CalImages=s.CalImages;
-                obj.CalImagesOrg=s.CalImagesOrg;
+%                 obj.CalImagesOrg=s.CalImagesOrg;
                 obj.Mask=s.Mask; 
                 obj.ROI=s.ROI; 
                 

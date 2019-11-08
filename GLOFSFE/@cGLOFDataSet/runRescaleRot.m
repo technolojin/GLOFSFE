@@ -13,17 +13,12 @@ end
 if (angle==0)&&(scale==1)
     In2=In1;
 else
-    
-    if use_gpu
-        if ~obj.flagRescaleReadyGpu
-            runRescaleReady(obj,CrdVtr,scale,angle,use_gpu);
-        end
-    else
-        if ~obj.flagRescaleReady
-            runRescaleReady(obj,CrdVtr,scale,angle,use_gpu);
-        end
+       
+    if (use_gpu==true)&&(obj.flagRescaleReadyGpu==false)
+        runRescaleReady(obj,CrdVtr,scale,angle,use_gpu);
+    elseif (use_gpu==false)&&(obj.flagRescaleReady==false)
+        runRescaleReady(obj,CrdVtr,scale,angle,use_gpu);
     end
-
     
     % load query grid
     X=obj.QueryGrid{1};
@@ -42,7 +37,7 @@ else
     
     % interpolation 
     for i=1:nk
-        In2(:,:,i)=interp2(Y,X,In1(:,:,i),Yq,Xq,'linear');
+        In2(:,:,i)=interp2(Y,X,In1(:,:,i),Yq,Xq,'linear',0);
     end
 
 end

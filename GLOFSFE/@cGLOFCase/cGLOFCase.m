@@ -15,7 +15,7 @@ classdef cGLOFCase < matlab.mixin.Copyable
         
         % data
         % calibration images
-        % 1:dark 2:bg 3:exc 4:scale 5:alpha(droplet)
+        % 1:dark 2:bg 3:exc 4:scale 5:alpha(droplet) 6:theta(angle[rad])
         DirCal         % directories of calibration images folder, struct
         
         cal_fmt        % cal image format
@@ -25,11 +25,14 @@ classdef cGLOFCase < matlab.mixin.Copyable
         
         scale_points
         scale_length
-        flagScale
+        flagScale=false;
+        input_beta=[];
         
         oil_drops
         v_drop
-        flagDrops
+        flagDrops=false;
+        input_alpha=[];
+        
     end
     
     
@@ -38,11 +41,9 @@ classdef cGLOFCase < matlab.mixin.Copyable
         % constructor
         function obj=cGLOFCase(casename)
             % initial values
-            obj.DirCal=struct('dark',[],'bg',[],'exc',[],'scale',[],'alpha',[]);
+            obj.DirCal=struct('dark',[],'bg',[],'exc',[],'scale',[],'alpha',[],'theta',[]);
             obj.FileMask=[];
             obj.Name='case_name';
-            obj.flagScale=false;
-            obj.flagDrops=false;
             
             if nargin==1&&ischar(casename)
                 obj.Name=casename;
@@ -57,11 +58,11 @@ classdef cGLOFCase < matlab.mixin.Copyable
             if isstruct(dir_cal)
                 obj.DirCal=dir_cal;
             elseif iscell(dir_cal)
-                obj.DirCal.dark=dir_cal{1};
-                obj.DirCal.bg=dir_cal{2};
-                obj.DirCal.exc=dir_cal{3};
-                obj.DirCal.scale=dir_cal{4};
-                obj.DirCal.alpha=dir_cal{5};
+                fld=fieldnames(obj.DirCal);
+                nf=size(dir_cal);
+                for i=1:nf
+                    obj.DirCal.(fld{i})=dir_cal{i};
+                end
             else
                 error('wrong DirCal format');
             end
@@ -88,6 +89,25 @@ classdef cGLOFCase < matlab.mixin.Copyable
             oil_drops=obj.oil_drops;
             v_drop=obj.v_drop;
         end
+        
+        function setAlpha( obj, alpha )
+            if isnumeric(alpha) && alpha>0
+                obj.input_alpha=alpha;
+                obj.flagDrops=true;
+            else
+                error('inappropriate alpha input');
+            end
+        end
+        
+        function setBeta( obj, beta )
+            if isnumeric(beta) && beta>0
+                obj.input_alpha=beta;
+                obj.flagScale=true;
+            else
+                error('inappropriate beta input');
+            end
+        end
+        
         
         function s = saveobj(obj)
             f = properties(obj)';

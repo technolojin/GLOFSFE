@@ -1,4 +1,9 @@
 function setScale(obj,scale_points,scale_length)
+if isempty(obj.DirCal.scale)
+   obj.flagScale=false;
+   return 
+end
+
 if nargin==3
     obj.scale_points=scale_points;
     obj.scale_length=scale_length;

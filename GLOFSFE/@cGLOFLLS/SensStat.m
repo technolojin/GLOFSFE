@@ -173,6 +173,11 @@ for w=1:nW
     
     sens_stat{w}=((tau_var{w}).^0.5)./(abs(sigma));
     sens_stat{w}=reshape(sens_stat{w},ni,nj,2);
+    
+    tau_ave{w}=single(tau_ave{w});
+    tau_var{w}=single(tau_var{w});
+    tau_skew{w}=single(tau_skew{w});
+    sens_stat{w}=single(sens_stat{w});
 end
 
 %% 

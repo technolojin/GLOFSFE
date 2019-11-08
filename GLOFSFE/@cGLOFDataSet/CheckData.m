@@ -61,7 +61,7 @@ end
 FileMask=obj.oCase.FileMask;
 if ~isempty(FileMask)
     if ischar(FileMask)
-        mask=imread(FileMask);
+        mask=LoadImages(FileMask);
         maskDim=size(mask);
     elseif isnumeric(FileMask)||islogical(FileMask)
         maskDim=size(FileMask);

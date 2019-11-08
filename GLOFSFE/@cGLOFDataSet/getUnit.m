@@ -1,4 +1,12 @@
 function [UnitH,UnitLength,UnitTime,UnitTau]=getUnit(obj)
+if ~obj.flagCalPara
+    UnitH=1;
+    UnitLength=1;
+    UnitTime=1;
+    UnitTau=1;
+    fprintf(1,'@cGLOFDataSet.getUnit: Not fully calibrated. Return default unit values.\n');
+    return
+end
 
 CalPara=obj.CalPara;
 alpha=CalPara.alpha;

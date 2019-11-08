@@ -35,7 +35,7 @@ tau_y(isnan(tau_y))=0;
 figure(fignumb);
 axis xy;
 gx=35; offset=1;
-plot.quiver_mod (tau_x', tau_y', gx, offset,'LineWidth',0.8);
+plot.quiver_mod (tau_x', tau_y','vectorNumber',gx,'Offset',offset,'LineWidth',0.8);
 set(gca,'DataAspectRatio',[1,1,1]);	
 xlabel('x (pixels)');
 ylabel('y (pixels)');

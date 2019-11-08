@@ -70,6 +70,7 @@ cB1=cell(nW,1);
 cBave=cell(nW,1);
 cRSS=cell(nW,1);
 cTSS=cell(nW,1);
+cResMeff=cell(nW,1);
 
 % scheme matrices
 [ Mave,Mc2f,SumFlux,Msigma,Diff_x,Diff_t ]=obj.fScheme( ni,nj,Scell );
@@ -105,6 +106,7 @@ for w=1:nW
     cBave{w}=Bave;
     cRSS{w}=RSS;
     cTSS{w}=TSS;
+    cResMeff{w}=resMeff;
 end
 
 % empty matrices
@@ -181,33 +183,32 @@ if use_gpu==1
 end
 
 %% Rsq
-Rsq=zeros(ni,nj,nW);
+Rsq=zeros(ni-1,nj-1,nW);
 for w=1:nW
     RSS=cRSS{w};
     TSS=cTSS{w};
-    B1=cB1{w};
-    
-    nQ=size(B1,1);
-    
-    rsq=B1'*(ones(nQ,1)-RSS./TSS);
-    rsq=-rsq(1:nF/2);
-    
+    resMeff=cResMeff{w};
+
     if use_gpu==1
-        rsq=gather(rsq);
+        RSS=gather(RSS);
+        TSS=gather(TSS);
     end
+    
+    nQ=size(resMeff,1);
+    rsq=resMeff'*(ones(nQ,1)-RSS./TSS);
     
     rsq(isnan(rsq))=0;
     rsq(isinf(rsq))=0;
         
-    Rsq(:,:,w)=reshape(rsq,ni,nj);
+    Rsq(:,:,w)=reshape(rsq,ni-1,nj-1);
 end
 
 %% analysis results
-obj.Rsq=Rsq;
-obj.Urms=Urms;
-obj.img.max=img_max;
-obj.img.min=img_min;
-obj.img.rms=img_rms;
+obj.Rsq=single(Rsq);
+obj.Urms=single(Urms);
+obj.img.max=single(img_max);
+obj.img.min=single(img_min);
+obj.img.rms=single(img_rms);
 
 fprintf(1,'  %s \n','done');
 

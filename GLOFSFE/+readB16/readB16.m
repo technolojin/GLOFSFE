@@ -8,8 +8,8 @@ function image = readB16(dirPath, filename)
 % where: image - 2D array of image
 %     filename - path and filename (string)
 %      dirPath - optional directory path (string)
-% 
-% Example usage: 
+%
+% Example usage:
 %  For a file 'image.b16' located in the local directory 'files', the following
 %  will be successful
 %    image = readB16('files/image.b16')
@@ -19,44 +19,48 @@ function image = readB16(dirPath, filename)
 %    image = readB16('files/image.B16')
 %    image = readB16('files','image.b16')
 %    image = readB16('files','image.B16')
-% 
+%
 % Image is returned as a 2D array, where only 1 image is stored in each *.b16 file.
 %
-% Only b/w images have been tested, and importing color images should 
+% Only b/w images have been tested, and importing color images should
 % throw an error.
 %
-
 % Author: Carl Hall
 % Date: Spring 2016
 
+% Color image is supported
+% Author: Taekjin Lee
+% Date: Summer 2019
+
+
 % Modification History
 %  March 2016 - Original Code
-%  June  2019 - Modified by Taekjin Lee
+%  August 2019 - Modified by Taekjin Lee
 
 %% b16 Header byte Structure
-% 
+%
 % Bytes    Type      Description
-% 4        chars     "PCO-" 
-% 4        int32     File size in byte       
-% 4        int32     file size in byte 
+% 4        chars     "PCO-"
+% 4        int32     File size in byte
+% 4        int32     file size in byte
 % 4        int32     header size + comment filed in byte
-% 4        int32     image width in pixel 
-% 4        int32     image height in pixel 
+% 4        int32     image width in pixel
+% 4        int32     image height in pixel
 % 4        int32     -1 (true), extended header follow
 % 4        int32     0 = black/with camera, 1 = color camer
-% 4        int32     black/white LUT-setting, minimum value 
-% 4        int32     black/white LUT-setting, maximum value 
-% 4        int32     black/white LUT-setting, 0 = linear, 1 = logarithmic 
-% 4        int32     red LUT-setting, minimum value 
-% 4        int32     red LUT-setting, maximum value 
-% 4        int32     green LUT-setting, minimum value 
-% 4        int32     green LUT-setting, maximum value 
-% 4        int32     blue LUT-setting, minimum value 
-% 4        int32     blue LUT-setting, maximum value 
-% 4        int32     color LUT-setting, 0 = linear, 1 = logarithmic 
+% 4        int32     black/white LUT-setting, minimum value
+% 4        int32     black/white LUT-setting, maximum value
+% 4        int32     black/white LUT-setting, 0 = linear, 1 = logarithmic
+% 4        int32     red LUT-setting, minimum value
+% 4        int32     red LUT-setting, maximum value
+% 4        int32     green LUT-setting, minimum value
+% 4        int32     green LUT-setting, maximum value
+% 4        int32     blue LUT-setting, minimum value
+% 4        int32     blue LUT-setting, maximum value
+% 4        int32     color LUT-setting, 0 = linear, 1 = logarithmic
 % ?        int32     internal use
-% ?        chars     Comment file in ASCII characters with variable length of 0...XX. 
-%                              The length of the comment filed must be documented in the “header length” field. 
+% ?        chars     Comment file in ASCII characters with variable length of 0...XX.
+%                              The length of the comment filed must be documented in the “header length” field.
 %          uint16    16 bit pixel data, starting at offset given by the 'header size' int32
 
 %% Start of Code
@@ -71,13 +75,13 @@ end
 % Open the file
 fd = fopen(filename,'r');
 if(fd < 0)
-  error('Could not open file: %s',filename)
+    error('Could not open file: %s',filename)
 end
 
 % Check that it is a PCO file
 filetype = fread(fd, 4, 'char');
 if(char(filetype') ~= 'PCO-')
-  error('Wrong filetype: %s',char(filetype'))
+    error('Wrong filetype: %s',char(filetype'))
 end
 
 % Get the image dimensions:
@@ -87,21 +91,28 @@ imgWidth   = fread(fd, 1, 'int32');  %
 imgHeight  = fread(fd, 1, 'int32');  %
 
 
-% look into the extended header, and thow error if color image
+% look into the extended header, and check if color image
 extHeader  = fread(fd, 1, 'int32');
 if(extHeader == -1)
-  colorMode  = fread(fd, 1, 'int32');
-  if(colorMode ~= 0)
-    error('Color image detected. Only b/w images have been tested with this function')
-  end
+    colorMode  = fread(fd, 1, 'int32');
+else
+    colorMode = 0;
 end
 
 % Get the image
 fseek(fd, headLength, 'bof');
 image = fread(fd, [imgWidth,imgHeight], 'uint16');
+image = image';
 
-% rotate and flip image to suit user
-image = image';  
+% arrange to RGB 
+if colorMode~=0
+    Ir=image(2:2:end,2:2:end);
+    Ig=image(2:2:end,1:2:end);
+    Ib=image(1:2:end,2:2:end);
+    %     Iw=image(1:2:end,1:2:end);
+    image=cat(3,Ir,Ig,Ib);
+end
+
 
 % close the file
 fclose(fd);

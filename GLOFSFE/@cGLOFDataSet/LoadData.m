@@ -12,10 +12,11 @@ Dim=obj.oRuns{1}.Dim;
 DirCal=obj.oCase.DirCal;
 max_calimage=obj.oCase.max_image;
 fmt=obj.oCase.cal_fmt;
-fld=fieldnames(obj.oCase.DirCal);
+% fld=fieldnames(obj.oCase.DirCal);
+fld={'dark';'bg';'exc';'scale';'alpha';'theta'};
 
 for i=1:size(fld,1)
-    if ~isempty(DirCal.(fld{i}))
+    if  isfield(DirCal,fld{i}) && ~isempty(DirCal.(fld{i}))
         img=cGLOFImageSet(DirCal.(fld{i}),fmt,max_calimage);
         obj.CalImages.(fld{i})=getIave(img);
     else
@@ -25,7 +26,7 @@ for i=1:size(fld,1)
             obj.CalImages.(fld{i})=zeros(Dim(1),Dim(2));
         end
     end
-    obj.CalImagesOrg.(fld{i})=obj.CalImages.(fld{i});
+%     obj.CalImagesOrg.(fld{i})=obj.CalImages.(fld{i});
 end
 
 % median filtering selected cal image(s)
@@ -38,30 +39,36 @@ end
 
 % make CalImages
 % avoid bg becomes larger than dark in any case
-if isempty(DirCal.bg)
-    obj.CalImages.bg=max(obj.CalImages.dark,obj.CalImages.bg);
+if isfield(DirCal,'bg') && ~isempty(DirCal.bg)
+%     obj.CalImages.bg=max(obj.CalImages.dark,obj.CalImages.bg);
+    obj.CalImages.bg=obj.CalImages.bg-obj.CalImages.dark;
+    obj.CalImages.bg(obj.CalImages.bg<0)=0;
+end
+if isfield(DirCal,'exc') && ~isempty(DirCal.exc)
+    obj.CalImages.exc=obj.CalImages.exc-obj.CalImages.dark;
+    obj.CalImages.exc(obj.CalImages.exc<0)=0;
 end
 
-obj.CalImages.bg=obj.CalImages.bg-obj.CalImages.dark;
-obj.CalImages.exc=obj.CalImages.exc-obj.CalImages.dark;
-
-% calibrate alpha image
 Texp=obj.CalPara.Texp;
-exp_adj=Texp.alpha/Texp.bg; % exposure time adjustment
+% calibrate alpha image
+if isfield(DirCal,'alpha') && ~isempty(DirCal.alpha)
+    exp_adj=Texp.alpha/Texp.bg; % exposure time adjustment
 
-alpha=obj.CalImages.alpha-obj.CalImages.dark;
-obj.CalImages.alpha=(alpha-obj.CalImages.bg.*exp_adj)./obj.CalImages.exc;
+    alpha=obj.CalImages.alpha-obj.CalImages.dark;
+    obj.CalImages.alpha=(alpha-obj.CalImages.bg.*exp_adj)./...
+                    (obj.CalImages.exc./cos(obj.CalImages.theta));
+end
 
 % offset image
 exp_adj=Texp.run/Texp.bg; % exposure time adjustment
 obj.CalImages.offset=obj.CalImages.bg*exp_adj;
-obj.CalImages.denomi=obj.CalImages.exc;
+obj.CalImages.denomi=obj.CalImages.exc./cos(obj.CalImages.theta);
 
-% save original size CalImages
-fld=fieldnames(obj.CalImages);
-for i=1:size(fld,1)
-    obj.CalImagesOrg.(fld{i})=obj.CalImages.(fld{i});
-end
+% % save original size CalImages
+% fld=fieldnames(obj.CalImages);
+% for i=1:size(fld,1)
+%     obj.CalImagesOrg.(fld{i})=obj.CalImages.(fld{i});
+% end
 
 % returned to original size
 obj.flagRescaled=false;
@@ -76,7 +83,7 @@ if isempty(FileMask)
     fprintf(1,' (mask is set to default)');
     obj.Mask=true(Dim(1),Dim(2));
 elseif ischar(FileMask)
-    mask=double(imread(FileMask));
+    mask=LoadImages(FileMask);
     obj.Mask=mask>0.5*max(mask(:));
 elseif isnumeric(FileMask)||islogical(FileMask)
     obj.Mask=FileMask>0.5;

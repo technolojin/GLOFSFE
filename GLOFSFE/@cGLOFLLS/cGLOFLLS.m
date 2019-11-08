@@ -64,7 +64,7 @@ classdef cGLOFLLS < handle
                 end
             end
             if ~isempty(obj.PairMask)
-               PairMask_in=obj.PairMask;
+                PairMask_in=obj.PairMask;
             end
             if isempty(option)
                 option='cpu';

@@ -1,4 +1,9 @@
 function setOilDrops(obj,v_drop,oil_drops)
+if isempty(obj.DirCal.alpha)
+   obj.flagDrops=false;
+   return 
+end
+
 narginchk(1,3);
 
 if nargin==3
@@ -11,8 +16,17 @@ elseif nargin<3
         volume_drop = input('please input the volume of an oil drop [micro liter]:');
         obj.v_drop = volume_drop*10^-9; %[liter]
     end
-    img=cGLOFImageSet(obj.DirCal.alpha,obj.cal_fmt,obj.max_image);
-    I_alpha=getIave(img);
+    img_alpha=cGLOFImageSet(obj.DirCal.alpha,obj.cal_fmt,obj.max_image);
+    I_alpha=getIave(img_alpha);
+    if ~isempty(obj.DirCal.exc)
+    	img_exc=cGLOFImageSet(obj.DirCal.exc,obj.cal_fmt,obj.max_image);
+    	I_exc=getIave(img_exc);
+        I_alpha=I_alpha./I_exc;
+        I_alpha(isinf(I_alpha))=0;
+        I_alpha(isnan(I_alpha))=0;
+    end
+    
+    
     imgq=plot.imgQuantile( I_alpha, [0.05, 0.98]);
     imagesc(I_alpha,imgq);
     colormap('winter');
