@@ -82,5 +82,3 @@ Experimental Aerodynamics Laboratory
 Department of Aerospace Engineering  
 Graduate School of Engineering  
 TOHOKU University, Sendai, JAPAN  
-E-mail: <lee.taekjin@aero.mech.tohoku.ac.jp>  
-Github: [technolojin](https://github.com/technolojin/)
