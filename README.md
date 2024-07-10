@@ -27,8 +27,7 @@ Scientific Instruments 89, 065106 (2018).
 3. Within MATLAB, execute install.m
 
 ## Examples
-Please download sample GLOF image sets from our homepage.
-<http://www.aero.mech.tohoku.ac.jp/glof/GLOF_example.zip>
+Please download sample GLOF image sets from `data/`.
 
 ## How to cite
 If you use the GLOF-SFE toolbox in your work, please cite the software itself and relevant paper(s).
